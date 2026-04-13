@@ -1,3 +1,4 @@
+import { useState } from "react";
 import * as d3 from "d3";
 
 const data = [
@@ -23,12 +24,18 @@ const data = [
   { country: "New Zealand", students: 3 },
 ];
 
-function App() {
-  const margin = { top: 20, right: 30, bottom: 40, left: 150 };
-  const width = 800 - margin.left - margin.right;
-  const height = 600 - margin.top - margin.bottom;
+const Barplot = ({ data }) => {
+  const [tooltip, setTooltip] = useState({
+    show: false,
+    x: 0,
+    y: 0,
+    content: "",
+  });
 
-  // D3 for math: scales
+  const margin = { top: 60, right: 30, bottom: 40, left: 100 };
+  const width = 500 - margin.left - margin.right;
+  const height = 400 - margin.top - margin.bottom;
+
   const xScale = d3
     .scaleLinear()
     .domain([0, d3.max(data, (d) => d.students)])
@@ -38,103 +45,160 @@ function App() {
     .scaleBand()
     .domain(data.map((d) => d.country))
     .range([0, height])
-    .padding(0.1);
+    .padding(0.2);
 
-  // D3 for math: axis ticks
-  const xTicks = xScale.ticks().map((tick) => ({
-    value: tick,
-    x: xScale(tick),
-  }));
+  const maxStudents = d3.max(data, (d) => d.students);
+  const xTicks = d3.range(0, maxStudents + 10, 10);
 
-  const yTicks = data.map((d) => ({
-    value: d.country,
-    y: yScale(d.country) + yScale.bandwidth() / 2,
-  }));
+  const handleMouseEnter = (event, d) => {
+    setTooltip({
+      show: true,
+      x: event.clientX + 10,
+      y: event.clientY - 10,
+      content: `${d.country}: ${d.students} students`,
+    });
+  };
+
+  const handleMouseLeave = () => {
+    setTooltip({ show: false, x: 0, y: 0, content: "" });
+  };
 
   return (
-    <div style={{ backgroundColor: "white" }}>
-      <svg
-        width={width + margin.left + margin.right}
-        height={height + margin.top + margin.bottom}
-      >
+    <>
+      <svg width={500} height={400}>
         <g transform={`translate(${margin.left},${margin.top})`}>
-          {/* Bars - React rendering */}
-          {data.map((d, i) => {
-            const barWidth = xScale(d.students);
-            const barY = yScale(d.country);
-            const barHeight = yScale.bandwidth();
-            const radius = 5;
-            const pathData = `M 0 ${barY} L ${barWidth - radius} ${barY} Q ${barWidth} ${barY} ${barWidth} ${barY + radius} L ${barWidth} ${barY + barHeight - radius} Q ${barWidth} ${barY + barHeight} ${barWidth - radius} ${barY + barHeight} L 0 ${barY + barHeight} Z`;
-            return (
-              <g key={i}>
-                <path d={pathData} fill="steelblue" />
-                <text
-                  x={barWidth + 5}
-                  y={barY + barHeight / 2}
-                  dominantBaseline="middle"
-                  fontSize="12"
-                  fill="black"
-                >
-                  {d.students}
-                </text>
-              </g>
-            );
-          })}
+          {/* Title */}
+          <text
+            x={width / 2}
+            y={-30}
+            textAnchor="middle"
+            fontSize="18"
+            fontFamily="Nunito"
+            fill="#3E2C23"
+            fontWeight="bold"
+          >
+            Students that ❤️ D3 ❤️ React Course
+          </text>
 
-          {/* X-axis - React rendering */}
-          <line x1={0} y1={height} x2={width} y2={height} stroke="black" />
-          {xTicks.map((tick, i) => (
-            <g key={i}>
-              <line
-                x1={tick.x}
-                y1={height}
-                x2={tick.x}
-                y2={height + 5}
-                stroke="black"
-              />
-              <text
-                x={tick.x}
-                y={height + 20}
-                textAnchor="middle"
-                fontSize="12"
-              >
-                {tick.value}
-              </text>
-            </g>
+          {/* Subtitle */}
+          <text
+            x={width / 2}
+            y={-10}
+            textAnchor="middle"
+            fontSize="15"
+            fontFamily="Nunito"
+            fill="#5D4037"
+          >
+            Where are they from?
+          </text>
+
+          {/* Gridlines */}
+          {xTicks.map((tick) => (
+            <line
+              key={tick}
+              x1={xScale(tick)}
+              y1={0}
+              x2={xScale(tick)}
+              y2={height}
+              stroke="#D2B48C"
+              strokeWidth="1"
+            />
           ))}
 
-          {/* Y-axis - React rendering */}
-          <line x1={0} y1={0} x2={0} y2={height} stroke="black" />
-          {yTicks.map((tick, i) => (
+          {/* X-axis line */}
+          <line
+            x1={0}
+            y1={height}
+            x2={width}
+            y2={height}
+            stroke="#D2B48C"
+            strokeWidth="2"
+          />
+
+          {/* Bars */}
+          {data.map((d, i) => (
+            <rect
+              key={i}
+              x={0}
+              y={yScale(d.country)}
+              width={xScale(d.students)}
+              height={yScale.bandwidth()}
+              fill="#2FA4D7"
+              onMouseEnter={(event) => handleMouseEnter(event, d)}
+              onMouseLeave={handleMouseLeave}
+              style={{ cursor: "pointer" }}
+            />
+          ))}
+
+          {/* Y-axis labels (countries) */}
+          {data.map((d, i) => (
             <text
               key={i}
               x={-10}
-              y={tick.y}
+              y={yScale(d.country) + yScale.bandwidth() / 2}
               textAnchor="end"
               dominantBaseline="middle"
               fontSize="12"
+              fontFamily="Nunito"
+              fill="#3E2C23"
             >
-              {tick.value}
+              {d.country}
             </text>
           ))}
 
-          {/* Labels */}
-          <text
-            x={width / 2}
-            y={height + margin.bottom - 5}
-            textAnchor="middle"
-          >
-            Number of Students
-          </text>
-          <text
-            transform={`rotate(-90) translate(${-height / 2}, ${-margin.left + 20})`}
-            textAnchor="middle"
-          >
-            Country
-          </text>
+          {/* X-axis labels (ticks) */}
+          {xTicks.map((tick) => (
+            <text
+              key={tick}
+              x={xScale(tick)}
+              y={height + 15}
+              textAnchor="middle"
+              fontSize="12"
+              fontFamily="Nunito"
+              fill="#3E2C23"
+            >
+              {tick}
+            </text>
+          ))}
         </g>
       </svg>
-    </div>
+
+      {/* Tooltip */}
+      {tooltip.show && (
+        <div
+          style={{
+            position: "fixed",
+            left: tooltip.x,
+            top: tooltip.y,
+            backgroundColor: "#cce7f5",
+            border: "2px solid #0d4a6b",
+            borderRadius: "8px",
+            padding: "8px",
+            fontFamily: "Nunito",
+            fontSize: "14px",
+            color: "#3E2C23",
+            pointerEvents: "none",
+            zIndex: 1000,
+          }}
+        >
+          {tooltip.content}
+        </div>
+      )}
+    </>
+  );
+};
+
+function App() {
+  return (
+    <>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap"
+      />
+      <div style={{ backgroundColor: "#F5E9D8" }}>
+        <Barplot data={data} />
+      </div>
+    </>
   );
 }
 
