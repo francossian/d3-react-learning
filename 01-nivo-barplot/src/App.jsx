@@ -22,6 +22,7 @@ const data = [
   { country: "Romania", students: 3 },
   { country: "Philippines", students: 3 },
   { country: "New Zealand", students: 3 },
+  { country: "Argentina", students: 1 },
 ];
 
 const Barplot = ({ data }) => {
@@ -36,10 +37,7 @@ const Barplot = ({ data }) => {
   const width = 500 - margin.left - margin.right;
   const height = 400 - margin.top - margin.bottom;
 
-  const xScale = d3
-    .scaleLinear()
-    .domain([0, d3.max(data, (d) => d.students)])
-    .range([0, width]);
+  const xScale = d3.scaleLinear().domain([0, 70]).range([0, width]);
 
   const yScale = d3
     .scaleBand()
